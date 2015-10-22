@@ -1,0 +1,38 @@
+##########################################################################################################################################################################################
+#							Algoritmo de  Peterson																				 #
+##########################################################################################################################################################################################
+
+#include <stdio.h>
+
+int nivel[n];
+int ultimoEntrar[n];
+
+void init(){
+	for (index = 0; index < (n); index++) {
+
+		flags[index] = -1
+	}
+
+
+	for (index = 0; index < (n); index++) {
+		turn[index] = 0;
+	}
+}
+
+void lock(void *arg){
+	long int i;
+
+	i = (long int)arg;
+	for (l = 0; count < (n); count++) {
+		flags[i] = count;
+		turn[count] = i;
+		"wait until (for all k != i, temp[k]<count) or (turn[count] != i)"
+	}
+}
+
+void unlock(void *arg){
+	long int i;
+
+	i = (long int)arg;
+	flags[i] = -1;
+}
