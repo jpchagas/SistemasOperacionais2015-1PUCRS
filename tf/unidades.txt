@@ -1,0 +1,14 @@
+boot_clock = 1 cluster = 1kb (0xbb)
+
+fat_entry = 16bits = 2bytes
+fat_space = 8clusters = 8kb
+
+fat_space = 8 clusters
+	= 8 * 1024 bytes 
+	= 8192 bytes
+	= 8192 / 4 = 2048 uint16_t
+
+
+setor = 512bytes
+cluster = 2 setores = 1024 bytes = 512 uint_8 = 1kb
+cluster_cnt = 4096 = 4096kb = 4mb
