@@ -38,20 +38,26 @@ void __fat_init(FILE** fp){
 	memset(clu, 0xbb, CLU_SIZE);
 	fwrite(clu, CLU_SIZE, 1, *fp);
 
-	//agora criamos os blocos da fat. inicialmente a fat tem
-	//todos os valores em 0xfffe. mudaremos estes posteriormente.
-	for(int i = 0; i < CLU_SIZE; i += 2){
-		clu[i]   = 0xff;
-		clu[i+1] = 0xfe;
-	}
+	//apontamento do BOOT dentro da FAT
+	fat[0] = 0xfffd; //boot
 
-	//gravamos 8 clusters no disco, pois esta pedindo no enunciado
-	for(int i = 0; i < 8; i++)
-		fwrite(clu, CLU_SIZE, 1, *fp);
+	//apontamento dos blocos da FAT dentro da própria FAT
+	for(int i = 1; i < 9; i++)
+		fat[i] = 0xfffe;
+
+	//apontamento do diretório ROOT dentro da FAT
+	fat[9]= 0xffff;
+
+	//todas as outras entradas da FAT apontam para lugar nenhum
+	for(int i = 10; i < NUM_BLOCKS; i++)
+		fat[i] = 0x0000;	
+
+	//escreve a fat em disco
+	fwrite(fat, FAT_SIZE, 1, *fp);
 
 	//criamos o diretorio raiz. com valor inicial de 0x11. 
-	//tambem mudaremos isto depois. na segunda linha, gravamos
-	//ele no disco
+	//mudaremos isto depois. na segunda linha, gravamos
+	//ele no disco.
 	memset(clu, 0x11, CLU_SIZE);
 	fwrite(clu, CLU_SIZE, 1, *fp);
 
@@ -63,57 +69,46 @@ void __fat_init(FILE** fp){
 	for(int i = 10; i < NUM_BLOCKS; i++)
 		fwrite(clu, CLU_SIZE, 1, *fp);
 
-	//agora ajustamos as entradas da fat para apontarem para os lugares
-	//corretos. fat[0] = boot, fat[1..9] = fat, fat[10] = root.
-	fseek(*fp, CLU_SIZE, SEEK_SET); //tamanho do cluster + inicio de arquivo.
-	fread(fat, FAT_SIZE, 1, *fp); //carrega a fat do disco em memória.
-
-	//seta boot 	
-	fat[0] = 0xfffd; //boot
-
-	//seta fat
-	for(int i = 1; i < 9; i++)
-		fat[i] = 0xfffe;
-
-	//root dir (EOF)
-	fat[10]= 0xffff;
-
-	//todos as outras entradas apontam para lugar nenhum
-	for(int i = 11; i < NUM_BLOCKS; i++)
-		fat[i] = 0x0000;	
-
-	//recoloca ponteiro no inicio da FAT apos a leitura
-	fseek(*fp, CLU_SIZE, SEEK_SET);
-
-	//salva fat em disco
-	fwrite(fat, FAT_SIZE, 1, *fp);
-
+	//mostra fat na tela
+	for(int i = 0; i < NUM_BLOCKS; i++){
+		fprintf(stderr, "%04x ", fat[i]);
+		if((i+1) % 16 == 0) fprintf(stderr, "\n");
+	}
 }
 
 
-/* Closes <fp> file pointer and enables the
- * is_it_time_to_quit flag, so the program
- * can terminate. */
+//liga a flag de saida e termina o programa.
 void __fat_quit(FILE** fp, char* q){
 	
-	//fclose(*fp);
-	*q = 1; //is_it_time_to_quit	
+	*q = 1; 	
 	fprintf(stderr, "Bye.\n");
 }
 
+//carrega registros da FAT existentes no disco. o programa nao
+//garante que estes registros existam.
 void __fat_load(FILE** fp){
 	
-	//reads existing file
+	//abre o arquivo para leitura e edicao
 	*fp = fopen("fat.part","r+b");
 
-	//did it load?
+	//checa erros na abertura do arquivo
 	if(!*fp){
 		fprintf(stderr, "Unable to load existing partition. Use <init> to create");
 		fprintf(stderr, " a new one\n");
 		return;
 	}
 
-	fprintf(stderr, "Partition file loaded succefully.\n");
+	//posiciona ponteiro no inicio da fat do disco
+	fseek(*fp, CLU_SIZE, SEEK_SET); //fat esta 1 bloco depois do inicio
+
+	//carrega dados dentro do vetor FAT
+	fread(fat, FAT_SIZE, 1, *fp);
+
+	//mostra fat na tela
+	for(int i = 0; i < NUM_BLOCKS; i++){
+		fprintf(stderr, "%04x ", fat[i]);
+		if((i+1) % 16 == 0) fprintf(stderr, "\n");
+	}
 }
 
 void __fat_ls(FILE** fp, char* dir){}
