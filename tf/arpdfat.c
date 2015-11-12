@@ -5,6 +5,8 @@
 #include <stdint.h>
 
 #define NUM_BLOCKS 4096
+#define DIR_SIZE 32
+#define DIR_COUNT 32
 #define CLU_SIZE 1024
 #define FAT_SIZE 1024 * 8
 
@@ -15,8 +17,25 @@ uint16_t fat[NUM_BLOCKS];
 //cluter que serve de buffer para carregar e salvar cluster no disco.
 //tem o tamanho de 256 palavras e pode ser ~castado~ direto para a 
 //struct de diretório, ou interpretado direto, no caso de arquivo.
-
 uint8_t clu[CLU_SIZE];
+
+//um cluster é composto de 32 entradas de diretório com 32 bytes cada.
+//por isso o cluster tem 1024 bytes (32 * 32 = 1024). para acessar os
+//campos da entrada de diretório, utilizamos a struct abaixo.
+typedef struct {
+	uint8_t nome[18];
+	uint8_t atributo;
+	uint8_t x_x; //inutil
+	uint8_t inicio; //onde esta o primeiro bloco
+	uint32_t tamanho; //total de bytes, pra saber até onde ler
+} entry;
+
+//pra nao ter que ficar dando cast em todo o programa, usamos uma union pra 
+union{
+	entry dir_data[DIR_SIZE];    //o mesmo espaco de memoria pode ser um diretorio
+	uint8_t raw_data[CLU_SIZE];  //ou um conteudo de arquivo. no segundo caso o
+                                     //arquivo é tratado como um array de bytes.
+}
 
 //funcao que inicializa a fat. inicialmente, o disco esta vazio, entao
 //adicionamos o BOOT_BLOCK, mais 8 blocos de FAT, mais o directorio 
